@@ -5,20 +5,19 @@ import org.junit.jupiter.api.Test
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import reactor.kotlin.core.publisher.toMono
-import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
 import java.util.function.Supplier
 import java.util.stream.Stream
 
-class MonoTest {
+class MonoKotlin {
 
     private fun onNext(): Consumer<Any> = Consumer { println("Received : $it") }
     private fun onError(): Consumer<Throwable> = Consumer { println("ERROR : " + it.message) }
     private fun onComplete(): Runnable = Runnable { println("Completed") }
 
     @Test
-    fun `Stream test`() {
+    fun stream() {
         val stream = Stream.of(1).map { i: Int ->
             try {
                 Thread.sleep(1000)
@@ -30,34 +29,40 @@ class MonoTest {
         println(stream)
         stream.forEach { x: Int? -> println(x) }
         stream.forEach { x: Int? -> println(x) }
-        println(stream)
+        // steam 파이프 라인은 한번 사용 하면 닫힌다
     }
 
     @Test
-    fun `Mono just test`() {
+    fun just() {
         // publisher
-//        val mono = Mono.just(1)
         val mono = 1.toMono()
         println(mono)
+        mono.subscribe { i: Int -> println("Received : $i") }
         mono.subscribe { i: Int -> println("Received : $i") }
     }
 
     @Test
-    fun `Mono subscribe test`() {
+    fun subscribe() {
         // publisher
 //        val mono = Mono.just("ball")
-        val mono = "ball".toMono().map { obj: String -> obj.length }.map { l: Int -> l / 1 }
+        val mono = "ball".toMono()
+            .map { obj: String -> obj.length }
+            .map { l: Int -> l / 1 }
+            .map { it.apply { println("wow : $it") } }
 
         mono.subscribe()
 
         mono.subscribe(
             onNext(), onError(), onComplete()
         )
-        mono.doOnNext(onNext()).doOnError(onError()).doAfterTerminate(onComplete()).subscribe()
+        mono.doOnNext(onNext())
+            .doOnError(onError())
+            .doAfterTerminate(onComplete())
+            .subscribe()
     }
 
     @Test
-    fun `Mono Empty || Error`() {
+    fun emptyOrError() {
         fun userRepository(userId: Int): Mono<String> = when (userId) {
             1 -> Mono.just(Faker().name().firstName())
             2 -> Mono.empty()
@@ -70,27 +75,18 @@ class MonoTest {
     }
 
     @Test
-    fun `Mono fromSupplier`() {
+    fun fromSupplier() {
         fun getName(): String {
             println("Generating name..")
             return Faker().name().fullName()
         }
 
-        // use just only when you have data already
-        // Mono<String> mono = Mono.just(getName());
-
-//        val mono = getName().toMono()
-        val stringSupplier = Supplier<String> { getName() }
-        val mono = Mono.fromSupplier(stringSupplier)
-        mono.subscribe(onNext())
-
-        val stringCallable = Callable<String> { getName() }
-        Mono.fromCallable(stringCallable)
+        getName().toMono()
             .subscribe(onNext())
     }
 
     @Test
-    fun `Mono Supplier Refactoring`() {
+    fun supplierRefactoring() {
         fun getName(): Mono<String> {
             println("entered getName method")
             return Mono.fromSupplier {
@@ -111,29 +107,43 @@ class MonoTest {
     }
 
     @Test
-    fun `Mono fromFuture`() {
+    fun async() {
+        fun getName(): Mono<String> {
+            println("entered getName method")
+            return Mono.fromSupplier {
+                println("Generating name..")
+                Thread.sleep(3000)
+                Faker().name().fullName()
+            }.map { it.uppercase() }
+        }
+        getName()
+            .subscribeOn(Schedulers.boundedElastic())
+            .subscribe(onNext())
+        getName()
+            .subscribeOn(Schedulers.boundedElastic())
+            .subscribe(onNext())
+        getName()
+            .subscribeOn(Schedulers.boundedElastic())
+            .subscribe(onNext())
+        Thread.sleep(4000)
+    }
+    @Test
+    fun fromFuture() {
         fun getName(): CompletableFuture<String> {
             return CompletableFuture.supplyAsync(Supplier { Faker().name().fullName() })
         }
-        Mono.fromFuture(getName())
+        getName().toMono()
             .subscribe(onNext())
         Thread.sleep(1000)
     }
 
     @Test
-    fun `Mono fromRunnable`() {
+    fun fromRunnable() {
 
         fun timeConsumingProcess() = Runnable {
             Thread.sleep(3)
             println("Operation completed")
         }
-
-        Mono.fromRunnable<Any>(timeConsumingProcess())
-            .subscribe(
-                onNext(),
-                onError(),
-                { println("process is done. Sending emails...") }
-            )
 
         timeConsumingProcess().toMono()
             .subscribe(
