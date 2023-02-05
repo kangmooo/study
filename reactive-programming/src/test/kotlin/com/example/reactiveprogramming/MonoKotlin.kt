@@ -1,4 +1,4 @@
-package com.example.javareactiveprogramming
+package com.example.reactiveprogramming
 
 import com.github.javafaker.Faker
 import org.junit.jupiter.api.Test

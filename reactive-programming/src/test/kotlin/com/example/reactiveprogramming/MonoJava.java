@@ -1,4 +1,4 @@
-package com.example.javareactiveprogramming;
+package com.example.reactiveprogramming;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
