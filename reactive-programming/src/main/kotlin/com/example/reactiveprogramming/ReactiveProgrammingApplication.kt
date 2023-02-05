@@ -1,11 +1,11 @@
-package com.example.javareactiveprogramming
+package com.example.reactiveprogramming
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class JavaReactiveProgrammingApplication
+class ReactiveProgrammingApplication
 
 fun main(args: Array<String>) {
-    runApplication<JavaReactiveProgrammingApplication>(*args)
+    runApplication<ReactiveProgrammingApplication>(*args)
 }

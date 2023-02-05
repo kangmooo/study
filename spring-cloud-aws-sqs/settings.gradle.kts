@@ -1,1 +1,1 @@
-rootProject.name = "sqs"
+rootProject.name = "spring-cloud-aws-sqs"
