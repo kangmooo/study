@@ -3,6 +3,8 @@ package com.example.reactiveprogramming
 import org.junit.jupiter.api.Test
 import org.reactivestreams.Subscription
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+import java.time.Duration
 import java.util.concurrent.atomic.AtomicReference
 
 class FluxKotlin {
@@ -111,27 +113,41 @@ class FluxKotlin {
 
     @Test
     fun fluxVsList() {
-//        val names = NameGenerator.getNames(5)
-//        println(names)
+        fun getName1(): String = Util.sleepSeconds(1).run { Util.faker().name().fullName() }
+        fun getNames1(count: Int): List<String> = (1..count).map { getName1() }
+        getNames1(5).apply { println(this) }
 
-        NameGenerator.getNames(5)
+        fun getName2(): String = Util.sleepSeconds(1).run { Util.faker().name().fullName() }
+        fun getNames2(count: Int): Flux<String> = Flux.range(1, count).map { getName2() }
+        getNames2(5).subscribe(Util.onNext())
+    }
+
+    @Test
+    fun fluxInterval() {
+        Flux.interval(Duration.ofSeconds(1))
             .subscribe(Util.onNext())
+        Util.sleepSeconds(5)
+
+    }
+
+    @Test
+    fun fluxFromMono() {
+        val mono: Mono<String> = Mono.just("a")
+        val flux: Flux<String> = Flux.from(mono)
+        flux.subscribe(Util.onNext())
+    }
+
+    @Test
+    fun toMono(){
+        Flux.range(1, 10)
+            .filter { it > 3 }
+            .next()             // mono
+            .filter { it > 3 }
+            .subscribe(Util.onNext(), Util.onError(), Util.onComplete())
     }
 }
 
-class NameGenerator {
-    companion object {
-//        fun getNames(count: Int) : List<String> = (1..count).map { getName() }
-//        private fun getName(): String = Util.sleepSeconds(1).run {
-//            Util.faker().name().fullName()
-//        }
 
-        fun getNames(count: Int): Flux<String> = Flux.range(1, count).map { getName() }
-        private fun getName(): String = Util.sleepSeconds(1).run {
-            Util.faker().name().fullName()
-        }
-    }
-}
 
 
 
